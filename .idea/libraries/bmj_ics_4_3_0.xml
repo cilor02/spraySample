@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="bmj-ics-4.3.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/bmj-ics-4.3.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/bmj-tools-1.6.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/business-systems-interface.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
