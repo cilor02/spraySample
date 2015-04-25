@@ -7,6 +7,9 @@ import com.bmj.bsi.restapi.exception.{RestAPIBadParameterException, RestAPIResou
 import com.bmj.ics.model.{IdentityType, Identity}
 import com.bmj.ics.model.impl.{IdImpl, IdentityImpl}
 import com.bmj.ics.net.IcsApi
+import com.bmj.bsi.restapi.ics.net.BSIRestIcsApi
+import com.bmj.ics.net.rest.RestIcsApi
+
 import com.bmj.ics.xml.PropertyName
 import com.ics.LovFileProcessor
 import com.milo.scala.model.{AccountImmutable}
@@ -23,7 +26,7 @@ import scala.collection.JavaConversions.mapAsScalaMap
 /**
  * Created by milori on 27/01/2015.
  */
-class RestServiceAdaptor (icsApi: IcsApi)
+class RestServiceAdaptor (icsApi: BSIRestIcsApi)
 {
 
   val lovFileProcessor = LovFileProcessor ("http://lov-ics.internal.bmjgroup.com/lov-ics.xml")
@@ -35,11 +38,49 @@ class RestServiceAdaptor (icsApi: IcsApi)
   val validCountries = lovFileProcessor.allCountries
 
   def accountByEmail(email:String):List[AccountImmutable]=
+  {
+    val icsSession = icsApi.createSession()
+    val identities = icsApi.findIdentitiesByPropertyValue(icsSession, "emailAddress", email.toLowerCase())
+    identities.asScala.filter(_.getPropertyValue("state").equalsIgnoreCase("enabled")).toList.map( convertToAccountDTO(_))
+  }
+
+
+  def accountById(id:String):Option[AccountImmutable]=
+  {
+    val icsSession = icsApi.createSession()
+    val icsIdResult = icsApi.findIdentity(icsSession,new IdImpl(id)) match { case icsId @ identity => Some(icsId) case null => None}
+    icsIdResult.filter (_.getPropertyValue("state").equalsIgnoreCase("enabled")).map (convertToAccountDTO (_))
+  }
+
+
+  def deleteById(id:String):Try[Option[AccountImmutable]]=
+  {
+    val icsSession = icsApi.createSession()
+    val icsIdResult = icsApi.findIdentity(icsSession,new IdImpl(id)) match { case icsId @ identity => Some(icsId) case null => None}
+
+    val idForDelete = icsIdResult.filter (_.getPropertyValue("state").equalsIgnoreCase("enabled"))
+
+    Try(
     {
-      val icsSession = icsApi.createSession()
-      val identities = icsApi.findIdentitiesByPropertyValue(icsSession, "emailAddress", email.toLowerCase())
-      identities.asScala.filter(_.getPropertyValue("state").equalsIgnoreCase("enabled")).toList.map( convertToAccountDTO(_))
+      idForDelete.foreach(id => {
+        if (id == null || !isIdentityEnabled(id)) {
+          throw new RestAPIResourceNotFoundException("Id " + id
+            + " cannot be found.")
+        }
+
+        id.setProperty("state","disabled")
+
+
+        println("id -----------" + id.getPropertyValue("state"))
+
+
+        icsApi.deleteIndividualIdentity(icsSession,id)
+      }
+      )
+      idForDelete.map(convertToAccountDTO(_))
     }
+    )
+  }
 
 
 
@@ -67,6 +108,10 @@ class RestServiceAdaptor (icsApi: IcsApi)
       )
 
       val identity = accountDTOtoIdentity(account);
+
+
+      //icsApi.createIndividualIdentity(icsSession,identity)
+      icsApi.createIndividualShellAccount(icsSession,identity)
       //account.professions.map( )
 
       account
@@ -116,13 +161,16 @@ class RestServiceAdaptor (icsApi: IcsApi)
 
   def isIdentityEnabled(id:Identity):Boolean = {println("identity _______" + id); "enabled".equalsIgnoreCase(id.getPropertyValue(PropertyName.STATE))}
 
-  def updateAccount(account: AccountImmutable): Try[AccountImmutable] = {
+  def updateAccount(account: AccountImmutable, accountId: String): Try[AccountImmutable] = {
 
+    validateAccount(account) match {
+      case Failure(exp) => throw(exp)
+      case Success (success) =>
+    }
     val icsSession = icsApi.createSession()
-    val accountId = account.accountId
+    //account.accountId = Some(accountId)
 
-    val identity =
-      accountId.map(acc => icsApi.findIdentity(icsSession, new IdImpl(acc)))
+    val identity = icsApi.findIdentity(icsSession, new IdImpl(accountId)) match {case i:Identity => Some(i) case _ => None }
 
     Try(
     {
@@ -132,6 +180,10 @@ class RestServiceAdaptor (icsApi: IcsApi)
             + " cannot be found.")
         }
 
+        val updAcc = account.copy(accountId = Some(accountId))
+        val identityUpd = accountDTOtoIdentity(updAcc);
+
+        icsApi.updateIndividualIdentity(icsSession,identityUpd)
       }
       )
       account
@@ -139,20 +191,6 @@ class RestServiceAdaptor (icsApi: IcsApi)
     )
 
   }
-    /*
-Try(
-
-
-)
-val identity = accountDTOtoIdentity(account)
-
-*/
-    //account.professions.map( )
-
-
-    //    identity
-    //  }
-
 
     def isListNulls(s: List[String]): () => Option[List[String]] = {
       () => s match {
@@ -167,7 +205,7 @@ val identity = accountDTOtoIdentity(account)
       }
     }
 
-    def accountDTOtoIdentity(accountImmutable: AccountImmutable): Unit = {
+    def accountDTOtoIdentity(accountImmutable: AccountImmutable): Identity = {
       val identity = new IdentityImpl();
 
 
@@ -175,40 +213,41 @@ val identity = accountDTOtoIdentity(account)
 
       identity.setProperty(PropertyName.TYPE, IdentityType.INDIVIDUAL.getValue());
       accountImmutable.givenName.foreach(identity.setProperty("forename", _))
-      accountImmutable.familyName.map(identity.setProperty("familyName", _))
-      accountImmutable.email.map(identity.setProperty("emailAddress/0", _))
-      accountImmutable.bmaNumber.map(identity.setProperty("bmaMemberNumber", _))
-      accountImmutable.country.map(identity.setProperty("country/0", _))
-      accountImmutable.city.map(identity.setProperty("town/0", _))
-      accountImmutable.province.map(identity.setProperty("county/0", _))
-      accountImmutable.organisation.map(identity.setProperty("placeOfWork", _))
-      accountImmutable.postalCode.map(identity.setProperty("postcode/0", _))
-      accountImmutable.address.map(identity.setProperty("address1/0", _))
-      accountImmutable.title.map(identity.setProperty(PropertyName.TITLE, _))
-      accountImmutable.telephone.map(identity.setProperty("phoneDirect/0", _))
-      accountImmutable.graduationYear.map(identity.setProperty("qualificationDate" + "-01-01", _))
+      accountImmutable.familyName.foreach(identity.setProperty("familyName", _))
+      accountImmutable.email.foreach(identity.setProperty("emailAddress/0", _))
+      accountImmutable.bmaNumber.foreach(identity.setProperty("bmaMemberNumber", _))
+      accountImmutable.country.foreach(identity.setProperty("country/0", _))
+      accountImmutable.country.foreach(identity.setProperty("primaryCountry", _))
 
+      accountImmutable.city.foreach(identity.setProperty("town/0", _))
+      accountImmutable.province.foreach(identity.setProperty("county/0", _))
+      accountImmutable.organisation.foreach(identity.setProperty("placeOfWork", _))
+      accountImmutable.postalCode.foreach(identity.setProperty("postcode/0", _))
+      accountImmutable.address.foreach(identity.setProperty("address1/0", _))
+      accountImmutable.title.foreach(identity.setProperty(PropertyName.TITLE, _))
+      accountImmutable.telephone.foreach(identity.setProperty("phoneDirect/0", _))
+      accountImmutable.graduationYear.foreach(identity.setProperty("qualificationDate" + "-01-01", _))
+
+
+      identity.setProperty("primaryContact/0", "true")
       val sdf = new SimpleDateFormat("yyyy-MM-dd");
 
       identity.setProperty("registrationLastUpdatedDate", sdf.format(new java.util.Date()));
       identity.setProperty("emailMatrixLastUpdatedDate", sdf.format(new java.util.Date()));
 
-      accountImmutable.specialties.map(_.filter(sp => lovFileProcessor.specialties.contains(sp)).zipWithIndex.map(x => (PropertyName.MEDICAL_SPECIALTY + "/" + x._2, x._1)).toMap)
+      val icsSpecialtyFields = accountImmutable.specialties.map(_.filter(sp => lovFileProcessor.specialties.contains(sp)).zipWithIndex.map(x => (PropertyName.MEDICAL_SPECIALTY + "/" + x._2, x._1)))
+      icsSpecialtyFields.foreach(_.foreach(p => identity.setProperty(p._1, p._2)))
+
       val icsProfFields = accountImmutable.professions.map(_.zipWithIndex.flatMap(x => lovFileProcessor.processProfession(x._1, x._2)))
       icsProfFields.foreach(_.foreach(p => identity.setProperty(p._1, p._2)))
 
-
-      println(identity)
+      identity
+      //println(identity)
 
 
     }
 
     def convertToAccountDTO(id: Identity): AccountImmutable = {
-
-      println(lovFileProcessor.processProfession("137", 0))
-      println(lovFileProcessor.processProfession("90", 1))
-      println(lovFileProcessor.processProfession("83", 2))
-      println(lovFileProcessor.processProfession("160", 3))
 
       val address = for {
         add1 <- isNulls(id.getPropertyValue("address1/0"))()
@@ -230,8 +269,7 @@ val identity = accountDTOtoIdentity(account)
         sp != null && validSpecialties.contains(sp)
       })
 
-      println(professions)
-      println(specialties)
+
       AccountImmutable(
         isNulls(id.getId.getValue)(),
         isNulls(id.getPropertyValue("titlePrefix"))(),
@@ -266,14 +304,4 @@ val identity = accountDTOtoIdentity(account)
     }
 
   }
-  /*def convertMultipleToJson(accountImmutableList: List[AccountImmutable]): JsObject =
-  {
-    JsObject (
-      "accountId" -> JsString (accountImmutable.accountId.getOrElse("")),
-      "forename" -> JsString (accountImmutable.givenName.getOrElse("")),
-      "accountId" -> JsString (accountImmutable.familyName.getOrElse("")),
-      "emailAddress" -> JsString (accountImmutable.email.getOrElse("")),
-      "address" -> JsString (accountImmutable.address.getOrElse(""))
-    )
-  }*/
-//}
+

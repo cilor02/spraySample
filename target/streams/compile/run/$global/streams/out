@@ -2,9 +2,9 @@
 [0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
 [0m[[0mdebug[0m] [0m  Classpath:[0m
 [0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\target\scala-2.10\classes[0m
-[0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\bmj-ics-4.3.0.jar[0m
+[0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\bmj-ics-4.3.7.jar[0m
 [0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\bmj-tools-1.6.5.jar[0m
-[0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\business-systems-interface.jar[0m
+[0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\business-systems-interface-develop.jar[0m
 [0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\commons-beanutils.jar[0m
 [0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\commons-codec-1.3.jar[0m
 [0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\lib\commons-collections.jar[0m
@@ -63,8 +63,4 @@
 [0m[[0mdebug[0m] [0m	C:\scala_dev\projects\spraySample\C\Users\milori\.ivy2\cache\xerces\xercesImpl\jars\xercesImpl-2.4.0.jar[0m
 [0m[[0mdebug[0m] [0mWaiting for thread run-main-0 to terminate.[0m
 [0m[[0mdebug[0m] [0m	Thread run-main-0 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread mike-ilori-akka.actor.default-dispatcher-3 to terminate.[0m
-[0m[[0mdebug[0m] [0m	Thread mike-ilori-akka.actor.default-dispatcher-3 exited.[0m
 [0m[[0mdebug[0m] [0mWaiting for thread mike-ilori-akka.actor.default-dispatcher-2 to terminate.[0m
-[0m[[0mdebug[0m] [0m	Thread mike-ilori-akka.actor.default-dispatcher-2 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread mike-ilori-scheduler-1 to terminate.[0m

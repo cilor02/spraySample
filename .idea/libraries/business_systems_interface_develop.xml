@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="business-systems-interface-develop">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/business-systems-interface-develop.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

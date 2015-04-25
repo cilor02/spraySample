@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="bmj-ics-4.3.0">
+  <library name="bmj-ics-remote-1.2.1">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/bmj-ics-4.3.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/bmj-ics-remote-1.2.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
